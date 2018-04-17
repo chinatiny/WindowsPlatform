@@ -1,0 +1,435 @@
+ 转载  Detours使用准备 收藏
+
+Detours是微软开发的一个函数库,可用于捕获系统API。在用其进行程序开发之前，得做一些准备工作：
+一.下载Detours
+     在http://research.microsoft.com/sn/detours 可免费下载Detours，当前的最新版本是
+·    Detours Express 2.1 is available for immediate download under a no-fee, click-through license for research, non-commercial, and non-production use on 32-bit code.
+·    Detours Professional 2.1 includes a license for use in production environments and the right to distribute detour functions in products. In addition to support for 32-bit x86 code, Detours Professional 2.1 includes support for 64-bit code on x64 and IA64 processors. For information on licensing Detours Professional 2.1 visit Microsoft's IP Licensing Group at www.microsoft.com/iplicensing and search under Detours.
+    由于我只是用于研究学习，所以下载的是第一个版本。
+二.安装Detours
+    从网上下载的是DetoursExpress.msi，安装该文件
+
+    
+三.生成Detours库
+    在安装后的文件夹下找不到直接可以拿来用的LIB文件，但是却有SRC文件（在**\Microsoft Research\Detours Express 2.1\src下）。该文件夹下还有Makefile，可以直接用来生成库。
+    安装后的文件夹目录
+  
+     具体生成库的做法是：
+     1.将Detours路径下的SCR文件夹拷贝到**\Microsoft Visual Studio\VC98路径下,注意是整个文件夹
+     2.运行**\Microsoft Visual Studio\VC98\Bin下VCVARS32.BAT文件.
+        在开始->运行里面输入CMD命令,在出来的命令行窗口里,将路径换至**\Microsoft Visual Studio\VC98\Bin,再将VCVARS32.BAT文件拖进命令行窗口里就行
+       
+     
+     3.运行NMAKE命令
+         在命令行窗口里将路径换到**\Microsoft Visual Studio\VC98\SRC,然后输入..\bin\nmake指令，回车
+        
+    
+      4.待此命令运行完后,在**\Microsoft Visual Studio\VC98\Lib文件下就能找到detoured.lib与detours.lib文件.
+      
+=======================================================
+
+Detours使用说明
+
+ 
+
+1 介绍... 1
+
+2 Detours API hook. 1
+
+2.1 hook DLL 中的函数... 2
+
+2.2 hook自定义c 函数... 3
+
+2.3 hook类成员函数... 4
+
+2.4 DetourCreateProcessWithDll 5
+
+2.5 Detouring by Address. 5
+
+ 
+1 介绍
+
+  Api hook包括两部分：api调用的截取和api函数的重定向。通过api hook可以修改函数的参数和返回值。关于原理的详细内容参见《windows核心编程》第19章和第22章。
+
+ 
+2 Detours API hook
+
+"Detours is a library for intercepting arbitrary Win32 binary functions on x86 machines. Interception code is applied dynamically at runtime. Detours replaces the first few instructions of the target function with an unconditional jump to the user-provided detour function. Instructions from the target function are placed in a trampoline. The address of the trampoline is placed in a target pointer. The detour function can either replace the target function, or extend its semantics by invoking the target function as a subroutine through the target pointer to the trampoline."
+
+在Detours库中，驱动detours执行的是函数 DetourAttach(…).
+
+LONG DetourAttach(
+
+    PVOID * ppPointer,
+
+    PVOID pDetour
+
+    );
+
+这个函数的职责是挂接目标API，函数的第一个参数是一个指向将要被挂接函数地址的函数指针，第二个参数是指向实际运行的函数的指针，一般来说是我们定义的替代函数的地址。但是，在挂接开始之前，还有以下几件事需要完成：
+
+    * 需要对detours进行初始化.
+    * 需要更新进行detours的线程.
+
+这些可以调用以下函数很容的做到:
+
+    * DetourTransactionBegin()
+    * DetourUpdateThread(GetCurrentThread())
+
+在这两件事做完以后，detour函数才是真正地附着到目标函数上。在此之后，调用DetourTransactionCommit()是detour函数起作用并检查函数的返回值判断是正确还是错误。
+2.1 hook DLL 中的函数
+
+在这个例子中，将要hook winsock中的函数 send(…)和recv(…).在这些函数中，我将会在真正调用send或者recv函数前，把真正说要发送或者接收的消息写到一个日志文件中去。注意：我们自定义的替代函式一定要与被hook的函数具有相同的参数和返回值。例如，send函数的定义是这样的：
+
+int send(
+
+  __in  SOCKET s,
+
+  __in  const char *buf,
+
+  __in  int len,
+
+  __in  int flags
+
+);
+
+因此，指向这个函数的指针看起来应该是这样的：
+
+int (WINAPI *pSend)(SOCKET, const char*, int, int) = send;
+
+把函数指针初始化成真正的函数地址是ok的；另外还有一种方式是把函数指针初始化为NULL，然后用函数DetourFindFunction(…) 指向真正的函式地址. 把send(…) 和 recv(…)初始化:
+
+int (WINAPI *pSend)(SOCKET s, const char* buf, int len, int flags) = send;
+
+int WINAPI MySend(SOCKET s, const char* buf, int len, int flags);
+
+int (WINAPI *pRecv)(SOCKET s, char* buf, int len, int flags) = recv;
+
+int WINAPI MyRecv(SOCKET s, char* buf, int len, int flags);
+
+现在，需要hook的函数和重定向到的函数已经定义好了。这里使用 WINAPI 是因为这些函数是用 __stdcall 返回值的导出函数，现在开始hook:
+
+INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
+
+{
+
+    switch(Reason)
+
+    {
+
+        case DLL_PROCESS_ATTACH:
+
+            DisableThreadLibraryCalls(hDLL);
+
+            DetourTransactionBegin();
+
+            DetourUpdateThread(GetCurrentThread());
+
+            DetourAttach(&(PVOID&)pSend, MySend);
+
+            if(DetourTransactionCommit() == NO_ERROR)
+
+                OutputDebugString("send() detoured successfully");
+
+            DetourTransactionBegin();
+
+            DetourUpdateThread(GetCurrentThread());
+
+            DetourAttach(&(PVOID&)pRecv, MyRecv);
+
+            if(DetourTransactionCommit() == NO_ERROR)
+
+                OutputDebugString("recv() detoured successfully");
+
+            break;
+
+            .
+
+            .
+
+            .
+
+它基本上是用上面介绍的步骤开始和结束 —— 初始化，更新detours线程，用DetourAttach(…)开始hook函数，最后调用DetourTransactionCommit() 函数, 当调用成功时返回 NO_ERROR, 失败是返回一些错误码.下面是我们的函数的实现，我发送和接收的信息写入到一个日志文件中:
+
+int WINAPI MySend(SOCKET s, const char* buf, int len, int flags)
+
+{
+
+    fopen_s(&pSendLogFile, "C:\\SendLog.txt", "a+");
+
+    fprintf(pSendLogFile, "%s\n", buf);
+
+    fclose(pSendLogFile);
+
+    return pSend(s, buf, len, flags);
+
+}
+
+ 
+
+int WINAPI MyRecv(SOCKET s, char* buf, int len, int flags)
+
+{
+
+    fopen_s(&pRecvLogFile, "C:\\RecvLog.txt", "a+");
+
+    fprintf(pRecvLogFile, "%s\n", buf);
+
+    fclose(pRecvLogFile);
+
+    return pRecv(s, buf, len, flags);
+
+}
+
+ 
+2.2 hook自定义c 函数
+
+   举例来说明，假如有一个函数，其原型为
+
+int RunCmd(const char* cmd);
+
+如果要hook这个函数，可以按照以下几步来做：
+
+a)     include 声明这个函数的头文件
+
+b)     定义指向这个函数的函数指针，int (* RealRunCmd)(const char*) = RunCmd;
+
+c)     定义detour函数，例如: int DetourRunCmd(const char*);
+
+d)     实现detour函数，如:
+
+Int DetourRunCmd(const char* cmd)
+
+{
+
+   //extend the function,add what you want ：）
+
+   Return RealRunCme(cmd);
+
+}
+
+这样就完成了hook RunCmd函数的定义，所需要的就是调用DetourAttack
+
+    DetourTransactionBegin();
+
+     DetourUpdateThread(GetCurrentThread());
+
+     DetourAttach(&(PVOID&)RealRunCmd, DetourRunCmd);
+
+     if(DetourTransactionCommit() == NO_ERROR)
+
+     {
+
+         //error
+
+     }
+2.3 hook类成员函数
+
+   Hook类成员函数通过在static函数指针来实现
+
+   还是举例说明，假如有个类定义如下:
+
+class CData
+
+{
+
+public:
+
+    CData(void);
+
+    virtual ~CData(void);
+
+    int Run(const char* cmd);
+
+};
+
+现在需要hook int CData::Run(const char*) 这个函数，可以按照以下几步：
+
+a) 声明用于hook的类
+
+class CDataHook
+
+{
+
+public:
+
+    int DetourRun(const char* cmd);
+
+    static int (CDataHook::* RealRun)(const char* cmd);
+
+};
+
+b) 初始化类中的static函数指针
+
+     int (CDataHook::* CDataHook::RealRun)(const char* cmd) = (int (CDataHook::*)(const char*))&CData::Run;
+
+c) 定义detour函数
+
+   int CDataHook::DetourRun(const char* cmd)
+
+{
+
+    //添加任意你想添加的代码
+
+    int iRet = (this->*RealRun)(cmd);
+
+    return iRet;
+
+}
+
+e)     调用detourAttach函数
+
+    DetourTransactionBegin();
+
+    DetourUpdateThread(GetCurrentThread());
+
+    DetourAttach(&(PVOID&)CDataHook::RealRun, (PVOID)(&(PVOID&)CDataHook::DetourRun));
+
+    if(DetourTransactionCommit() == NO_ERROR)
+
+    {
+
+        //error
+
+    }
+
+ 
+2.4 DetourCreateProcessWithDll
+
+使用这个函数相当于用CREATE_SUSPENDED 标志调用函数CreateProcess. 新进程的主线程处于暂停状态,因此DLL能在函数被运行钱被注入。注意：被注入的DLL最少要有一个导出函数. 如用testdll.dll注入到notepad.exe中:
+
+#undef UNICODE
+
+#include <cstdio>
+
+#include <windows.h>
+
+#include <detours\detours.h>
+
+ 
+
+int main()
+
+{
+
+    STARTUPINFO si;
+
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(STARTUPINFO));
+
+    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+
+    si.cb = sizeof(STARTUPINFO);
+
+    char* DirPath = new char[MAX_PATH];
+
+    char* DLLPath = new char[MAX_PATH]; //testdll.dll
+
+    char* DetourPath = new char[MAX_PATH]; //detoured.dll
+
+    GetCurrentDirectory(MAX_PATH, DirPath);
+
+    sprintf_s(DLLPath, MAX_PATH, "%s\\testdll.dll", DirPath);
+
+    sprintf_s(DetourPath, MAX_PATH, "%s\\detoured.dll", DirPath);
+
+    DetourCreateProcessWithDll(NULL, "C:\\windows\\notepad.exe", NULL,
+
+        NULL, FALSE, CREATE_DEFAULT_ERROR_MODE, NULL, NULL,
+
+        &si, &pi, DetourPath, DLLPath, NULL);
+
+    delete [] DirPath;
+
+    delete [] DLLPath;
+
+    delete [] DetourPath;
+
+    return 0;
+
+}
+
+2.5 Detouring by Address
+
+假如出现这种情况怎么办？我们需要hook的函数既不是一个标准的WIN32 API，也不是导出函数。这时我们需要吧我们的程序和被所要注入的程序同事编译，或者，把函数的地址硬编码：
+
+#undef UNICODE
+
+#include <cstdio>
+
+#include <windows.h>
+
+#include <detours\detours.h>
+
+ 
+
+typedef void (WINAPI *pFunc)(DWORD);
+
+void WINAPI MyFunc(DWORD);
+
+ 
+
+pFunc FuncToDetour = (pFunc)(0x0100347C); //Set it at address to detour in
+
+                    //the process
+
+INT APIENTRY DllMain(HMODULE hDLL, DWORD Reason, LPVOID Reserved)
+
+{
+
+    switch(Reason)
+
+    {
+
+    case DLL_PROCESS_ATTACH:
+
+        {
+
+            DisableThreadLibraryCalls(hDLL);
+
+            DetourTransactionBegin();
+
+            DetourUpdateThread(GetCurrentThread());
+
+            DetourAttach(&(PVOID&)FuncToDetour, MyFunc);
+
+            DetourTransactionCommit();
+
+        }
+
+        break;
+
+    case DLL_PROCESS_DETACH:
+
+        DetourTransactionBegin();
+
+        DetourUpdateThread(GetCurrentThread());
+
+        DetourDetach(&(PVOID&)FuncToDetour, MyFunc);
+
+        DetourTransactionCommit();
+
+        break;
+
+    case DLL_THREAD_ATTACH:
+
+    case DLL_THREAD_DETACH:
+
+        break;
+
+    }
+
+    return TRUE;
+
+}
+
+ 
+
+void WINAPI MyFunc(DWORD someParameter)
+
+{
+
+    //Some magic can happen here
+
+}

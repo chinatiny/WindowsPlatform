@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{b25e6ed2-8c78-4696-9491-753acc7a5355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{299f41ab-19d5-4f1c-9653-5d88115c481d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{851891f3-7f28-4833-a733-77cbbd73dc5a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dbg.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessOperation.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="LibaryAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="PEOperation.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="PEAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypto.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="botan_all.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ApcAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="RegAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ImmAnti.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="AttachAnti.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Dbg.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="detours\detours.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessOperation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="LibaryAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="AntiCommon.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="PEOperation.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="PEAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="Crypto.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="botan_all.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ApcAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="RegAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ImmAnti.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="AttachAnti.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="009反注入测试程序.rc">
+      <Filter>resource</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

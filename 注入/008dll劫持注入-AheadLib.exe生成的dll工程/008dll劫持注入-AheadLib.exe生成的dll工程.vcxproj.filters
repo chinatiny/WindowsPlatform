@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AheadLib.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="aheadlib的使用说明.txt" />
+  </ItemGroup>
+</Project>
