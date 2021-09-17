@@ -23,4 +23,12 @@
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DriverEntry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="C:\Program Files (x86)\Windows Kits\8.1\Lib\win7\km\x86\ntstrsafe.lib" />
+  </ItemGroup>
 </Project>

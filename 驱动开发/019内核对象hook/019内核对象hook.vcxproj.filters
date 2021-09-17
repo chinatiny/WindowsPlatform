@@ -23,4 +23,12 @@
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DriverEntry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="对象hook原理.docx" />
+  </ItemGroup>
 </Project>

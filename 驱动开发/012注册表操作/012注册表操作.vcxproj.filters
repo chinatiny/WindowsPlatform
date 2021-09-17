@@ -23,4 +23,17 @@
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DriverEntry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RegOper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RegOper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
